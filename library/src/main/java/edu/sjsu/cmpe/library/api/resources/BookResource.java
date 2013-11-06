@@ -2,6 +2,7 @@ package edu.sjsu.cmpe.library.api.resources;
 
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -21,6 +22,7 @@ import edu.sjsu.cmpe.library.domain.Book.Status;
 import edu.sjsu.cmpe.library.dto.BookDto;
 import edu.sjsu.cmpe.library.dto.BooksDto;
 import edu.sjsu.cmpe.library.dto.LinkDto;
+import edu.sjsu.cmpe.library.repository.BookRepository;
 import edu.sjsu.cmpe.library.repository.BookRepositoryInterface;
 
 @Path("/v1/books")
@@ -37,7 +39,7 @@ public class BookResource {
      *            a BookRepository instance
      */
     public BookResource(BookRepositoryInterface bookRepository) {
-	this.bookRepository = bookRepository;
+    	this.bookRepository = bookRepository;
     }
 
     @GET
@@ -88,11 +90,27 @@ public class BookResource {
 	Book book = bookRepository.getBookByISBN(isbn.get());
 	book.setStatus(status);
 
+	if(book.getStatus().equals(Status.lost)){
+		((BookRepository)bookRepository).postTOQueue(isbn);
+		System.out.println("Reachable code");
+	}
+	
 	BookDto bookResponse = new BookDto(book);
 	String location = "/books/" + book.getIsbn();
 	bookResponse.addLink(new LinkDto("view-book", location, "GET"));
 
 	return Response.status(200).entity(bookResponse).build();
+    }
+
+    @DELETE
+    @Path("/{isbn}")
+    @Timed(name = "delete-book")
+    public BookDto deleteBook(@PathParam("isbn") LongParam isbn) {
+	bookRepository.delete(isbn.get());
+	BookDto bookResponse = new BookDto(null);
+	bookResponse.addLink(new LinkDto("create-book", "/books", "POST"));
+
+	return bookResponse;
     }
 }
 

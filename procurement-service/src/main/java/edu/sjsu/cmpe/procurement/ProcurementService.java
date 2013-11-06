@@ -7,7 +7,10 @@ import com.yammer.dropwizard.Service;
 import com.yammer.dropwizard.config.Bootstrap;
 import com.yammer.dropwizard.config.Environment;
 
+import de.spinscale.dropwizard.jobs.JobsBundle;
 import edu.sjsu.cmpe.procurement.config.ProcurementServiceConfiguration;
+import edu.sjsu.cmpe.procurement.point2point.Consumer;
+import edu.sjsu.cmpe.procurement.pubsub.Publisher;
 
 public class ProcurementService extends Service<ProcurementServiceConfiguration> {
 
@@ -20,15 +23,26 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
     @Override
     public void initialize(Bootstrap<ProcurementServiceConfiguration> bootstrap) {
 	bootstrap.setName("procurement-service");
+	bootstrap.addBundle(new JobsBundle("edu.sjsu.cmpe.procurement"));
     }
 
     @Override
     public void run(ProcurementServiceConfiguration configuration,
 	    Environment environment) throws Exception {
-	String queueName = configuration.getStompQueueName();
-	String topicName = configuration.getStompTopicName();
-	log.debug("Queue name is {}. Topic is {}", queueName, topicName);
-	// TODO: Apollo STOMP Broker URL and login
-
+		String queueName = configuration.getStompQueueName();
+		log.debug("Queue name is {}", queueName);
+		// TODO: Apollo STOMP Broker URL and login
+		Consumer.setProcurementServiceConfiguration(configuration);
+		Publisher.setProcurementServiceConfiguration(configuration);
+		/*final Client client = new Client().using(configuration.getJerseyClientConfiguration())
+                .using(environment)
+                .build();*/
+		/*ClientConfig cc = configuration.getJerseyClientConfiguration();
+		cc.getClasses().add(JSONRootElementProvider.class);*/
+	    //Client c = Client.create(cc);
+	    
+	    //final Client client = Client.create(cc);
+	    
+		//ProcurementJobs.setClient(client);
     }
 }

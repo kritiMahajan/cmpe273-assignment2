@@ -9,7 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.yammer.dropwizard.jersey.params.LongParam;
+
+import edu.sjsu.cmpe.library.config.LibraryServiceConfiguration;
 import edu.sjsu.cmpe.library.domain.Book;
+import edu.sjsu.cmpe.library.point2point.Producer;
 
 public class BookRepository implements BookRepositoryInterface {
     /** In-memory map to store books. (Key, Value) -> (ISBN, Book) */
@@ -17,10 +21,13 @@ public class BookRepository implements BookRepositoryInterface {
 
     /** Never access this key directly; instead use generateISBNKey() */
     private long isbnKey;
-
-    public BookRepository() {
-	bookInMemoryMap = seedData();
-	isbnKey = 0;
+    
+    private LibraryServiceConfiguration libConfig;
+    
+    public BookRepository(LibraryServiceConfiguration configuration) {
+		bookInMemoryMap = seedData();
+		isbnKey = 0;
+		libConfig = configuration;
     }
 
     private ConcurrentHashMap<Long, Book> seedData(){
@@ -77,6 +84,15 @@ public class BookRepository implements BookRepositoryInterface {
 
 	return newBook;
     }
+    
+    public Book saveBookIfAbsent(Book book) {
+	checkNotNull(book, "Book instance must not be null");
+
+	// Finally, save the new book into the map
+	bookInMemoryMap.putIfAbsent(book.getIsbn(), book);
+
+	return book;
+    }
 
     /**
      * @see edu.sjsu.cmpe.library.repository.BookRepositoryInterface#getBookByISBN(java.lang.Long)
@@ -93,4 +109,25 @@ public class BookRepository implements BookRepositoryInterface {
 	return new ArrayList<Book>(bookInMemoryMap.values());
     }
 
+    /*
+     * Delete a book from the map by the isbn. If the given ISBN was invalid, do
+     * nothing.
+     * 
+     * @see
+     * edu.sjsu.cmpe.library.repository.BookRepositoryInterface#delete(java.
+     * lang.Long)
+     */
+    @Override
+    public void delete(Long isbn) {
+	bookInMemoryMap.remove(isbn);
+    }
+    
+    
+    
+	public void postTOQueue(LongParam isbn) {	
+		Producer Producer = new Producer(libConfig);
+		Producer.sendMessage(isbn);
+	}
+	
+	
 }

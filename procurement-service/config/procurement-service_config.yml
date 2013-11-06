@@ -4,17 +4,18 @@
 
 # Apollo STOMP Broker Configuration
 # FIXME - Replace 99999 with your ID
-stompQueueName: /queue/99999.book.orders
+stompQueueName: /queue/05348.book.orders
 
 # Procurement Service needs to publish to all topics!
 # FIXME - Replace 99999 with your ID
-stompTopicName: /topic/99999.book.*
+stompTopicNameA: "/topic/05348.book.all"
+stompTopicNameB: "/topic/05348.book.computer"
 
 # TODO: Apollo STOMP Broker URL and login
-#apolloUser: "admin"
-#apolloPassword: "password"
-#apolloHost: "54.215.210.214"
-#apolloPort: 61613
+apolloUser: "admin"
+apolloPassword: "password"
+apolloHost: "54.215.210.214"
+apolloPort: 61613
 
 # HTTP-specific options.
 http:

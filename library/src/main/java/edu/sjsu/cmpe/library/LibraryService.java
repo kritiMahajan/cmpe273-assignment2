@@ -11,14 +11,17 @@ import com.yammer.dropwizard.views.ViewBundle;
 import edu.sjsu.cmpe.library.api.resources.BookResource;
 import edu.sjsu.cmpe.library.api.resources.RootResource;
 import edu.sjsu.cmpe.library.config.LibraryServiceConfiguration;
+import edu.sjsu.cmpe.library.pubsub.BackgroundThread;
+import edu.sjsu.cmpe.library.pubsub.Listener;
 import edu.sjsu.cmpe.library.repository.BookRepository;
 import edu.sjsu.cmpe.library.repository.BookRepositoryInterface;
+import edu.sjsu.cmpe.library.repository.BookRepositoryManager;
 import edu.sjsu.cmpe.library.ui.resources.HomeResource;
 
 public class LibraryService extends Service<LibraryServiceConfiguration> {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
-
+    
     public static void main(String[] args) throws Exception {
 	new LibraryService().run(args);
     }
@@ -37,12 +40,15 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 	String topicName = configuration.getStompTopicName();
 	log.debug("Queue name is {}. Topic name is {}", queueName,
 		topicName);
+	
 	// TODO: Apollo STOMP Broker URL and login
+	BackgroundThread.startThread(new Listener(configuration));
 
 	/** Root API */
 	environment.addResource(RootResource.class);
 	/** Books APIs */
-	BookRepositoryInterface bookRepository = new BookRepository();
+	BookRepositoryInterface bookRepository = new BookRepository(configuration);
+	BookRepositoryManager.setBookRepository(bookRepository);
 	environment.addResource(new BookResource(bookRepository));
 
 	/** UI Resources */
